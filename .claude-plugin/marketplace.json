@@ -15,13 +15,14 @@
       "source": "./",
       "strict": false,
       "version": "1.0.0",
-      "author": { "name": "poem" },
-      "keywords": ["claude-skill", "admin-core", "spring-boot", "ddd"],
-      "skills": [
-        "./skills/software-architecture",
-        "./skills/api-design",
-        "./skills/mysql-design",
-        "./skills/spring-boot"
+      "author": {
+        "name": "poem"
+      },
+      "keywords": [
+        "claude-skill",
+        "admin-core",
+        "spring-boot",
+        "ddd"
       ]
     }
   ]

@@ -25,10 +25,21 @@ claude plugin install admin-core-conventions@espay-backend-skills -s project
 내용은 admin-core 저장소의 `CLAUDE.md` 와 `src/test/.../architecture/` 가 강제하는 규약을 따른다.
 규약이 바뀌면 이 저장소도 함께 갱신한다.
 
-## 수정
+## 스킬 수정·추가
 
-`skills/<이름>/SKILL.md` 를 고치고 push 한다.
-설치한 쪽에서는 `claude plugin update admin-core-conventions` 로 반영한다(재시작 필요).
+기존 스킬 수정은 `skills/<이름>/SKILL.md` 를 고치고 push 하면 된다.
+
+**새 스킬은 `skills/<이름>/SKILL.md` 폴더만 만들면 된다.**
+`marketplace.json` 은 손대지 않는다 — `skills` 배열을 두지 않아 폴더가 자동 인식된다.
+
+설치한 쪽에서 반영하는 방법:
+
+```bash
+claude plugin marketplace update espay-backend-skills   # 저장소에서 최신 내용 가져오기
+claude plugin update admin-core-conventions             # 플러그인 갱신 (재시작 필요)
+```
+
+마켓플레이스를 로컬 경로로 등록한 경우 `marketplace update` 만으로 즉시 반영된다.
 
 ## 다른 프로젝트를 추가하려면
 
