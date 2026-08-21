@@ -5,7 +5,7 @@ espay 백엔드 프로젝트용 Claude Code 스킬 마켓플레이스.
 ## admin-core 팀원 설치
 
 ```bash
-claude plugin marketplace add github:YoungHoSeong/claude-skills
+claude plugin marketplace add github:ie99999/claude-skills
 cd <admin-core 클론 경로>
 claude plugin install admin-core-conventions@espay-backend-skills -s project
 ```
