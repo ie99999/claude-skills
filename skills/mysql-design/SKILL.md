@@ -1,67 +1,77 @@
 ---
 name: mysql-design
-description: MySQL table and JPA entity design conventions. Use when creating tables, entities, or discussing database schema.
+description: admin-core 의 DB 스키마와 영속성 계층 규약 — 테이블·JPA 엔티티·Mapper·QueryDSL. 테이블이나 엔티티를 만들 때 사용한다.
 ---
 
-# MySQL Design Convention
+# DB·영속성 규약 (admin-core)
 
-## When to activate
-- Creating new JPA entities or tables
-- Database schema design or migration
-- Writing Flyway migration DDL
+DB 는 **MariaDB** 다 (로컬 Docker, 포트 13308). 상세는 `docs/db/DB_정의서.md`.
 
-## Table Rules
-- 테이블명: snake_case, 복수형 (users, orders, order_items)
-- PK: BIGINT AUTO_INCREMENT, 컬럼명 `id`
-- FK 컬럼명: `{참조테이블_단수}_id` (user_id, order_id)
-- **FK 제약조건 사용하지 않음** (애플리케이션 레벨에서 관리)
-- 모든 테이블 필수 컬럼:
-  - `created_date` DATETIME NOT NULL
-  - `last_modified_date` DATETIME NOT NULL
-- charset: utf8mb4, collation: utf8mb4_unicode_ci
-- **모든 테이블과 컬럼에 COMMENT 필수** (V1 패턴 준수)
-  - 테이블: `) COMMENT='반려동물 정보'`
-  - 컬럼: `name VARCHAR(50) NOT NULL COMMENT '반려동물 이름'`
+## 스키마 관리
 
-## Column Rules
-- 컬럼명: snake_case
-- BOOLEAN → TINYINT(1)
-- 금액: DECIMAL(12,0)
-- 좌표: DECIMAL(10,7)
-- ENUM 대신 VARCHAR 사용
-- **Java enum 매핑 컬럼은 VARCHAR(1)** — `CHAR(1)` 금지
-  (Hibernate 가 CHAR(1) 을 DB ENUM 으로 요구해 마이그레이션을 또 추가하게 됨)
-- 문자열 기본: VARCHAR(255), 긴 텍스트: TEXT
-- NOT NULL을 기본으로, NULL 허용은 명시적 이유 필요
+**Flyway 를 쓰지 않는다.** 스키마는 기동 시 `spring.sql.init` 이 적용한다.
 
-## Flyway Migration
-- `src/main/resources/db/migration/V{번호}__{설명}.sql`
-- **적용된 마이그레이션 파일은 절대 수정하지 않는다** — 새 마이그레이션 생성
-- 버전 번호는 순차 증가 (V1, V2, ...)
+```
+spring.sql.init.schema-locations: classpath:db/schema/admin_core_schema.sql
+spring.jpa.hibernate.ddl-auto: validate
+```
 
-## Index Rules
-- WHERE, JOIN에 자주 사용되는 컬럼에 INDEX
-- 복합 인덱스: 카디널리티 높은 컬럼을 앞에 배치
-- 유니크 제약: UNIQUE INDEX 사용
-- 인덱스명: `idx_{테이블}_{컬럼}` (예: idx_payments_user_id)
+- 테이블 변경은 `src/main/resources/db/schema/admin_core_schema.sql` 을 고친다
+- `ddl-auto` 가 `validate` 이므로 엔티티와 스키마가 어긋나면 **기동이 실패한다**
+- 역할·사용자·메뉴 권한 초기 데이터는 자동 적용되지 않는다 (`docs/db/DB_정의서.md` 3.2절 INSERT)
 
-## JPA Entity Mapping
-- @Entity, @Table(name = "테이블명")
-- @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
-- @Column(nullable = false, length = 100)
-- CreatedAndLastModifiedDate 베이스 클래스 상속 (@CreatedDate, @LastModifiedDate)
-- 연관관계: 기본 LAZY 로딩
-- @ManyToOne(fetch = FetchType.LAZY)
-- @OneToMany(mappedBy = "...", cascade, orphanRemoval)
-- Entity에 @Setter 사용 금지 (비즈니스 메서드로 상태 변경)
+## 테이블 규칙
 
-## Naming Convention (JPA ↔ DB)
-- Entity: PascalCase (OrderItem)
-- Table: snake_case 복수형 (order_items)
-- Java field: camelCase (createdDate)
-- DB column: snake_case (created_date)
+- 테이블명·컬럼명 snake_case
+- Y/N 플래그는 `char(1)` (`result_yn`, `use_yn`)
+- 생성·수정 시각은 `created_at`, `updated_at`
+- 문자열은 용도에 맞는 길이를 명시 (`login_reason` 100, `fail_reason` 255, `client_ip` 64)
+
+## 도메인과 엔티티를 분리한다
+
+**Aggregate 에 JPA 애노테이션을 붙이지 않는다.** `domain/` 은 `jakarta.` import 자체가 금지다
+(`CoreDependencyRuleTest` 가 검사한다). 영속성 모델은 별도로 둔다.
+
+```
+adapter/out/persistence/{업무}/
+├─ entity/{Domain}JpaEntity.java        JPA 매핑 전용
+├─ mapper/{Domain}PersistenceMapper.java  toDomain() / toEntity()
+├─ repository/{Domain}JpaRepository.java
+├─ repository/{Domain}QueryDslRepository.java
+└─ {Domain}PersistenceAdapter.java      port.out 구현
+```
+
+## JPA 엔티티
+
+```java
+@Getter
+@Entity
+@Table(name = "login_logs")
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+public class LoginHistoryJpaEntity {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "hist_id")
+    private Long id;
+
+    @Column(name = "result_yn", nullable = false, length = 1, columnDefinition = "char(1)")
+    private String resultYn;
+}
+```
+
+- `@Setter` 금지, 기본 생성자는 `PROTECTED`
+- 컬럼명을 `@Column(name = ...)` 으로 명시한다 (필드명과 다른 경우가 많다)
+- 연관관계는 LAZY 기본
+
+## Port 와 Adapter
+
+- `port.out` 의 `save` 는 **Aggregate Root 를 그대로 받고 그대로 반환**한다 (중계 Command 금지)
+- Adapter 가 Mapper 로 도메인 ↔ 엔티티를 변환한다
+- 감사 이력 저장은 본 작업 실패와 무관해야 하므로 Adapter 에서
+  `@Transactional(propagation = Propagation.REQUIRES_NEW)`
 
 ## QueryDSL
-- 쿼리 작성 시 QueryDSL 사용을 기본으로 한다
-- 네이티브 쿼리는 QueryDSL로 불가능한 경우에만 사용
-- QueryDsl{Domain}Repository 인터페이스 + QueryDsl{Domain}RepositoryImpl 구현
+
+- 동적 검색 조건은 QueryDSL 을 기본으로 한다 (`{Domain}QueryDslRepository`)
+- 네이티브 쿼리는 QueryDSL 로 불가능한 경우에만
+- Q 클래스는 annotationProcessor 가 생성하므로 컴파일이 선행되어야 한다

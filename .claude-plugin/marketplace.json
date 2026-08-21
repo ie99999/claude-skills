@@ -5,23 +5,23 @@
     "email": "youngho.seong@gmail.com"
   },
   "metadata": {
-    "description": "Spring Boot 백엔드 개발 규약 스킬 모음",
+    "description": "espay 백엔드 프로젝트용 Claude Code 스킬",
     "version": "1.0.0"
   },
   "plugins": [
     {
-      "name": "backend-conventions",
-      "description": "Spring Boot / DDD / MySQL / REST API 설계 규약 스킬",
+      "name": "admin-core-conventions",
+      "description": "admin-core 프로젝트 규약 — DDD·헥사고날 구조, ApiResponse 봉투, MariaDB 영속성, 테스트 전략",
       "source": "./",
       "strict": false,
       "version": "1.0.0",
       "author": { "name": "poem" },
-      "keywords": ["claude-skill", "spring-boot", "ddd", "mysql", "rest-api"],
+      "keywords": ["claude-skill", "admin-core", "spring-boot", "ddd"],
       "skills": [
-        "./skills/spring-boot",
-        "./skills/mysql-design",
+        "./skills/software-architecture",
         "./skills/api-design",
-        "./skills/software-architecture"
+        "./skills/mysql-design",
+        "./skills/spring-boot"
       ]
     }
   ]
