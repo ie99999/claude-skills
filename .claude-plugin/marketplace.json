@@ -1,0 +1,28 @@
+{
+  "name": "espay-backend-skills",
+  "owner": {
+    "name": "poem",
+    "email": "youngho.seong@gmail.com"
+  },
+  "metadata": {
+    "description": "Spring Boot 백엔드 개발 규약 스킬 모음",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "backend-conventions",
+      "description": "Spring Boot / DDD / MySQL / REST API 설계 규약 스킬",
+      "source": "./",
+      "strict": false,
+      "version": "1.0.0",
+      "author": { "name": "poem" },
+      "keywords": ["claude-skill", "spring-boot", "ddd", "mysql", "rest-api"],
+      "skills": [
+        "./skills/spring-boot",
+        "./skills/mysql-design",
+        "./skills/api-design",
+        "./skills/software-architecture"
+      ]
+    }
+  ]
+}
